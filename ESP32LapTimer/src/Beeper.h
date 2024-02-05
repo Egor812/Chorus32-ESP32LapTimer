@@ -18,10 +18,22 @@
 #ifndef __BEEPER_H__
 #define __BEEPER_H__
 
+#include <stdint.h>
+
+
 void beep();
-void doubleBeep();
+/*void doubleBeep();
 void chirps();
-void fiveBeep();
+void fiveBeep();*/
+void beepBits(uint32_t);
+void beep1x500();
+void beep2x500();
+void beep1x1000();
+void beep2x250();
+void beep3x250();
+void beep1x250();
+void beepYes();
+void beepNo();
 void beeperUpdate();
 
 #endif // __BEEPER_H__

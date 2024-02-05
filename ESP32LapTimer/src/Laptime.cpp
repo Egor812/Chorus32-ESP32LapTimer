@@ -23,8 +23,10 @@
 #include "HardwareConfig.h"
 #include "settings_eeprom.h"
 #include "Comms.h"
+#include "Beeper.h"
 
-static volatile uint32_t LapTimes[MAX_NUM_RECEIVERS][MAX_LAPS_NUM];
+static volatile uint32_t LapTimes[MAX_NUM_RECEIVERS][MAX_LAPS_NUM]; // absolute time in millis
+uint32_t bestLap=0xFFFFFFFF;
 static volatile int lap_counter[MAX_NUM_RECEIVERS] = {0, 0, 0, 0, 0, 0}; //Keep track of what lap we are up too
 static int last_lap_sent[MAX_NUM_RECEIVERS];
 
@@ -43,7 +45,7 @@ void sendNewLaps() {
     int laps_to_send = lap_counter[i] - last_lap_sent[i];
     if(laps_to_send > 0) {
       for(int j = 0; j < laps_to_send; ++j) {
-        sendLap(lap_counter[i] - j, i);
+        sendLap(lap_counter[i] - j, i); //comms
       }
       last_lap_sent[i] += laps_to_send;
     }
@@ -75,10 +77,36 @@ uint32_t getLaptimeRel(uint8_t receiver) {
   return getLaptimeRel(receiver, lap_counter[receiver]);
 }
 
+/// @brief 
+/// @param receiver 0..5
+/// @param time absolute in millis
+/// @return 
 uint8_t addLap(uint8_t receiver, uint32_t time) {
+  uint32_t cur;
+  uint32_t prev;
+
+  cur = time-LapTimes[ receiver ][ lap_counter[receiver] ];
+  if( lap_counter[receiver]>0 ) prev = LapTimes[receiver][lap_counter[receiver]]-LapTimes[receiver][lap_counter[receiver]-1];
+  else prev = cur;
+  if( cur<bestLap ) bestLap=cur;
+
   lap_counter[receiver] = lap_counter[receiver] + 1;
   LapTimes[receiver][lap_counter[receiver]] = time;
+
+  beepLap(cur, prev, bestLap);
+
   return lap_counter[receiver];
+}
+
+void beepLap( uint32_t time, uint32_t prev, uint32_t best )
+{
+    if( isSoundEnabled() ) {
+   if( time==best) beep3x250();
+   else{
+      if( time<prev) beep2x250();
+      else beep1x250();
+    }
+  }
 }
 
 uint32_t getMinLapTime() {

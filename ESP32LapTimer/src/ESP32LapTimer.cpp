@@ -158,7 +158,7 @@ void loop() {
     OLED_CheckIfUpdateReq();
   }
 #endif
-  sendNewLaps();
+  sendNewLaps();  //Laptime.cpp
   update_outputs();
   SendCurrRSSIloop();
 

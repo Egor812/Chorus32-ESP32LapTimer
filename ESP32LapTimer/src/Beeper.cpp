@@ -23,6 +23,48 @@
 #include <Arduino.h>
 
 static Timer beeperTimer = Timer(50);
+uint32_t melody=0b00000000000000000000000;
+uint8_t melody_position=33;
+
+void beepBits(uint32_t bits){
+  melody = bits;
+  melody_position=0;
+  beeperTimer.reset();
+}
+
+void beep1x500(){
+  beepBits(0b1111111111);
+}
+
+void beep2x500(){
+  beepBits(0b1111111111001111111111);
+}
+
+void beep1x1000(){
+  beepBits(0b11111111111111111111);
+}
+
+void beep1x250(){
+  beepBits(0b11111);
+}
+
+void beep2x250(){
+  beepBits(0b11111011111);
+}
+
+void beep3x250(){
+  beepBits(0b11111011111011111);
+}
+
+void beepYes(){
+  beepBits(0b11111011111);
+}
+
+void beepNo(){
+  beepBits(0b00011000011);
+}
+
+
 
 void beep() {
   digitalWrite(BEEPER, HIGH);
@@ -31,7 +73,7 @@ void beep() {
   beeperTimer.reset();
 }
 
-void doubleBeep() {
+/*void doubleBeep() {
   int i=0;
   for (i=0; i<=1; i++) {
     digitalWrite(BEEPER, HIGH);
@@ -59,10 +101,24 @@ void fiveBeep() {
     digitalWrite(BEEPER, LOW);
     delay(50);
   }
-}
+}*/
 
 void beeperUpdate() {
   if (beeperTimer.hasTicked()) {
-    digitalWrite(BEEPER, LOW);
+    if( melody_position == 33 ) return;
+    if( melody_position < 32){
+      if( bitRead(melody, melody_position)==1 ){
+        digitalWrite(BEEPER, HIGH);
+      }
+      else{
+        digitalWrite(BEEPER, LOW);
+      }
+    }
+    else {
+      digitalWrite(BEEPER, LOW);
+    }
+    melody_position++;
+    beeperTimer.reset();
+    //digitalWrite(BEEPER, LOW);
   }
 }

@@ -34,7 +34,8 @@ void EepromSettingsStruct::load() {
   EEPROM.get(0, *this);
   Serial.println("EEPROM LOADED");
 
-  Serial.println(EepromSettings.NumReceivers);
+  Serial.print("RX num: ");
+  Serial.println( EepromSettings.NumReceivers);
   Serial.println(NumReceivers);
 
   if (this->eepromVersionNumber != EEPROM_VERSION_NUMBER) {

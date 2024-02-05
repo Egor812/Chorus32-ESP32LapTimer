@@ -46,6 +46,7 @@
 #include "settings_eeprom.h"
 #include "Laptime.h"
 #include "ADC.h"
+#include "Beeper.h"
 
 ///////This is mostly from the original Chorus Laptimer, need to cleanup unused functions and variables
 
@@ -167,7 +168,7 @@ static int32_t timeAdjustment = INFINITE_TIME_ADJUSTMENT;
 
 //----- other globals------------------------------
 static uint8_t raceMode = 0; // 0: race mode is off; 1: lap times are counted relative to last lap end; 2: lap times are relative to the race start (sum of all previous lap times);
-//static uint8_t isSoundEnabled = 1; // TODO: implement this option
+static uint8_t soundEnabled = 1; // TODO: implement this option
 static uint8_t isConfigured = 0; //changes to 1 if any input changes the state of the device. it will mean that externally stored preferences should not be applied
 static uint8_t shouldWaitForFirstLap = 0; // 0 means start table is before the laptimer, so first lap is not a full-fledged lap (i.e. don't respect min-lap-time for the very first lap)
 
@@ -478,7 +479,8 @@ void SendSoundMode(uint8_t NodeAddr) {
   addToSendQueue('S');
   addToSendQueue(TO_HEX(NodeAddr));
   addToSendQueue(RESPONSE_SOUND);
-  addToSendQueue('0');
+  //addToSendQueue('0');
+  addToSendQueue(TO_HEX(soundEnabled));
   addToSendQueue('\n');
 }
 
@@ -641,6 +643,7 @@ void handleSerialControlInput(char *controlData, uint8_t  ControlByte, uint8_t N
   uint8_t NodeAddrByte = TO_BYTE(NodeAddr); // convert ASCII to real byte values
 
   //Serial.println(length);
+  //Serial.println(controlData);
 
   if (ControlByte == CONTROL_NUM_RECIEVERS) {
     SendNumberOfnodes();
@@ -672,6 +675,7 @@ void handleSerialControlInput(char *controlData, uint8_t  ControlByte, uint8_t N
     switch (ControlByte) {
 
       case CONTROL_RACE_MODE:
+
         valueToSet = TO_BYTE(controlData[3]);
         setRaceMode(valueToSet);
         for (int i = 0; i < getNumReceivers(); i++) {
@@ -681,8 +685,15 @@ void handleSerialControlInput(char *controlData, uint8_t  ControlByte, uint8_t N
         break;
 
       case CONTROL_WAIT_FIRST_LAP:
+
         valueToSet = TO_BYTE(controlData[3]);
         shouldWaitForFirstLap = valueToSet;
+        //if( shouldWaitForFirstLap ) beepYes();
+        //else beepNo();
+        //todo is it necessary to make it 1..8 times?
+        for (int i = 0; i < getNumReceivers(); i++) {
+          WaitFirstLap(i);
+        }
         //playClickTones();
         isConfigured = 1;
         break;
@@ -737,18 +748,18 @@ void handleSerialControlInput(char *controlData, uint8_t  ControlByte, uint8_t N
         break;
 
       case CONTROL_SOUND:
-        //valueToSet = TO_BYTE(controlData[1]);
-        //        isSoundEnabled = valueToSet;
-        //        if (!isSoundEnabled) {
-        //          noTone(buzzerPin);
-        //        }
+        valueToSet = TO_BYTE(controlData[3]);
+        soundEnabled = valueToSet;
+        /*if (!isSoundEnabled) {
+          noTone(buzzerPin);
+        }*/
         //addToSendQueue(SEND_SOUND_STATE);
         //playClickTones();
         for (int i = 0; i < getNumReceivers(); i++) {
           SendSoundMode(i);
         }
         isConfigured = 1;
-
+        if( isSoundEnabled() ) beep1x250();
         break;
 
       case CONTROL_THRESHOLD:
@@ -853,4 +864,13 @@ void thresholdModeStep() {
 
 bool isInRaceMode() {
   return raceMode;
+}
+
+
+bool isSoundEnabled(){
+  return soundEnabled;
+}
+
+bool isShouldWaitForFirstLap(){
+  return shouldWaitForFirstLap;
 }

@@ -28,6 +28,7 @@
 static int calibrationFreqIndex = 0;
 static bool isCurrentlyCalibrating = false;
 static Timer calibrationTimer = Timer(50);
+static uint16_t maxFreq = 0;
 
 bool isCalibrating() {
   return isCurrentlyCalibrating;
@@ -38,22 +39,35 @@ void rssiCalibration() {
     EepromSettings.RxCalibrationMin[i] = 5000;
     EepromSettings.RxCalibrationMax[i] = 0;
   }
-
   isCurrentlyCalibrating = true;
   calibrationFreqIndex = 0;
   setModuleFrequencyAll(channelFreqTable[calibrationFreqIndex]);
   setRXADCfilter(LPF_10Hz);
   calibrationTimer.reset();
+  Serial.println("Calibration started:");
+  setDisplayScreenNumber(2);
+}
+
+
+void rssiCalibrationReset(){
+  for (int i = 0; i < getNumReceivers(); i++) {
+    EepromSettings.RxCalibrationMax[i] = RSSI_ADC_READING_MAX;
+    EepromSettings.RxCalibrationMin[i] = RSSI_ADC_READING_MIN;
+  }
+  setSaveRequired();
 }
 
 void rssiCalibrationUpdate() {
+  // Пройтись по всем каналам. Из пустых каналов взять Min. Из занятых Max.
   if (UNLIKELY(isCurrentlyCalibrating && calibrationTimer.hasTicked())) {
     for (uint8_t i = 0; i < getNumReceivers(); i++) {
       if (getRSSI(i) < EepromSettings.RxCalibrationMin[i])
         EepromSettings.RxCalibrationMin[i] = getRSSI(i);
 
-      if (getRSSI(i) > EepromSettings.RxCalibrationMax[i])
+      if (getRSSI(i) > EepromSettings.RxCalibrationMax[i]){
         EepromSettings.RxCalibrationMax[i] = getRSSI(i);
+        maxFreq=channelFreqTable[calibrationFreqIndex];
+      }
     }
     calibrationFreqIndex++;
     if (calibrationFreqIndex < 8*8) { // 8*8 = 8 bands * 8 channels = total number of freq in channelFreqTable.
@@ -65,6 +79,14 @@ void rssiCalibrationUpdate() {
         setModuleChannelBand(i);
         // Prevent min > max
         EepromSettings.RxCalibrationMax[i] = MAX(EepromSettings.RxCalibrationMax[i], EepromSettings.RxCalibrationMin[i] + 1);
+        Serial.print("Freq with max:");
+        Serial.println(maxFreq);
+        Serial.print("Min[");
+        Serial.print( i );
+        Serial.print("]: ");
+        Serial.print(EepromSettings.RxCalibrationMin[i]);
+        Serial.print(" Max: ");
+        Serial.println(EepromSettings.RxCalibrationMax[i]);
       }
       isCurrentlyCalibrating = false;
       setSaveRequired();

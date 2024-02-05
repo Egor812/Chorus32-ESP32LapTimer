@@ -119,7 +119,8 @@ void IRAM_ATTR nbADCread( void * pvParameters ) {
   if (LIKELY(isInRaceMode() > 0)) {
     CheckRSSIthresholdExceeded(current_adc);
   }
-  current_adc = (current_adc + 1) % MAX_NUM_RECEIVERS;
+  //current_adc = (current_adc + 1) % MAX_NUM_RECEIVERS;
+  current_adc = (current_adc + 1) % getNumReceivers();
 }
 
 

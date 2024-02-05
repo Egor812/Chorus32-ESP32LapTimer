@@ -22,5 +22,6 @@ bool isCalibrating();
 void rssiCalibration();
 void rssiCalibrationUpdate();
 int getcalibrationFreqIndex();
+void rssiCalibrationReset();
 
 #endif // __CALIBRATION_H__

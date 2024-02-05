@@ -28,6 +28,8 @@
 #include "Calibration.h"
 #include "TimerWebServer.h"
 #include "Utils.h"
+#include "Scanner.h"
+#include "Comms.h"
 
 static uint8_t oledRefreshTime = 50;
 static uint32_t last_input_ms = 0;
@@ -55,6 +57,7 @@ oled_page_t oled_pages[] = {
   {NULL, NULL, adc_page_update, next_page_input},
   {NULL, NULL, calib_page_update, calib_page_input},
   {NULL, NULL, airplane_page_update, airplane_page_input},
+  {NULL, NULL, scan_page_update, scan_page_input},
   {&rxPageData, rx_page_init, rx_page_update, rx_page_input}
 };
 
@@ -129,17 +132,17 @@ void rx_page_init(void* data) {
 
 void rx_page_input(void* data, uint8_t index, uint8_t type) {
   rxPageData_s* my_data = (rxPageData_s*) data;
-  if(index == 0 && type == BUTTON_SHORT) {
+  if(index == 0 && type == BUTTON_SHORT) { //b1
     ++my_data->currentPilotNumber;
     if(my_data->currentPilotNumber >= getNumReceivers()) {
       oledNextPage();
       my_data->currentPilotNumber = 0;
     }
   }
-  else if(index == 1 && type == BUTTON_SHORT) {
+  else if(index == 1 && type == BUTTON_SHORT) { //b2
     incrementRxFrequency(my_data->currentPilotNumber);
   }
-  else if(index == 1 && type == BUTTON_LONG) {
+  else if(index == 1 && type == BUTTON_LONG) { //b2
     incrementRxBand(my_data->currentPilotNumber);
   }
 }
@@ -165,6 +168,26 @@ void rx_page_update(void* data) {
   display.drawVerticalLine(45 + map(getRSSIThreshold(my_data->currentPilotNumber), 600, 3500, 0, 85),  35, 8); // line to show the RSSIthresholds
   display.drawString(0,46, "Btn2 SHORT - Channel.");
   display.drawString(0,55, "Btn2 LONG  - Band.");
+}
+
+void scan_page_update(void* data){
+  display.setTextAlignment(TEXT_ALIGN_LEFT);
+  display.setFont(Dialog_plain_9);
+  display.drawString(0,0, "RX0 RSSI:");
+  display.drawString(0,55, "Press Btn2 to start");
+  display.drawString(10,10, "R");
+  display.drawString(20,10, "A");
+  display.drawString(30,10, "B");
+  display.drawString(40,10, "E");
+  display.drawString(50,10, "F");
+  display.drawString(60,10, "D");
+  for(byte j=0; j<8; j++){
+    for(byte i=0; i<8; i++){
+      display.drawVerticalLine( 10+j*10+i, 20, map( getScannedRSSI(i+j*8), 600, 3500, 0, 70) );
+    }
+  }
+  uint8_t bCh = getBestScannedCh();
+  if( bCh!=0xFF) display.drawString(70,0, "max:" + getBandLabel(bCh/8) + String(bCh%8 + 1));
 }
 
 void summary_page_update(void* data) {
@@ -198,6 +221,13 @@ void summary_page_update(void* data) {
   if (getADCVBATmode() == INA219) {
     display.drawString(90, 0, String(getMaFloat()/1000, 2) + "A");
   }
+
+  if( isSoundEnabled() )     display.drawString(56, 0, "S");
+  else      display.drawString(56, 0, "m");
+
+  if( isShouldWaitForFirstLap() )     display.drawString(64, 0, "R");
+  else      display.drawString(64, 0, "o");
+
   
   // Rx modules
   display.setTextAlignment(TEXT_ALIGN_LEFT);
@@ -205,7 +235,7 @@ void summary_page_update(void* data) {
   #define RSSI_BAR_HEIGHT 8
   #define RSSI_BAR_X_OFFSET 40
   for (int i = 0; i < getNumReceivers(); i++) {
-    display.drawString(0, 9 + i * 9, getBandLabel(getRXBand(i)) + String(getRXChannel(i) + 1) + ", " + String(getRSSI(i) / 12));
+    display.drawString(0, 9 + i * 9, getBandLabel(getRXBand(i)) + String(getRXChannel(i) + 1) + ", " + String(getRSSI(i) / 12) );
     display.drawProgressBar(RSSI_BAR_X_OFFSET, 10 + i * 9, RSSI_BAR_LENGTH, RSSI_BAR_HEIGHT, map(getRSSI(i), RSSI_ADC_READING_MIN, RSSI_ADC_READING_MAX, 0, 100));
     display.drawVerticalLine(RSSI_BAR_X_OFFSET + map(MAX(getRSSIThreshold(i), RSSI_ADC_READING_MIN), RSSI_ADC_READING_MIN, RSSI_ADC_READING_MAX, 0, RSSI_BAR_LENGTH),  10 + i * 9, RSSI_BAR_HEIGHT); // line to show the RSSIthresholds
   }
@@ -231,8 +261,21 @@ void calib_page_update(void* data) {
 
 void calib_page_input(void* data, uint8_t index, uint8_t type) {
   (void)data;
-  if(index == 1 && type == BUTTON_SHORT) {
+  if(index == 1 && type == BUTTON_SHORT) { //b2
     rssiCalibration();  
+  }
+  else if(index == 1 && type == BUTTON_LONG) { //b2
+    rssiCalibrationReset();
+  }  
+  else {
+    next_page_input(data, index, type);
+  }
+}
+
+void scan_page_input(void* data, uint8_t index, uint8_t type) {
+  (void)data;
+  if(index == 1 && type == BUTTON_SHORT) { //b2
+    rssiScan();  
   }
   else {
     next_page_input(data, index, type);

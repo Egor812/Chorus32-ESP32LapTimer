@@ -163,10 +163,12 @@ void newButtonUpdate() {
   if (longPressActive1 && longPressActive2) {
     // Long press on both buttons gets you here
     delay(200);
-    chirps();
+    //chirps();
+    beep2x500();
     delay(1000);
+    beep1x1000();
     Serial.println("RESET");
-    fiveBeep();
+    //fiveBeep();
     EepromSettings.defaults();
     delay(100);
     restart_esp();
