@@ -30,6 +30,7 @@
 #include "Utils.h"
 #include "Scanner.h"
 #include "Comms.h"
+#include "Matrix.h"
 
 static uint8_t oledRefreshTime = 50;
 static uint32_t last_input_ms = 0;
@@ -211,6 +212,13 @@ void summary_page_update(void* data) {
   } else {
     display.drawString(36, 0, String(millis() % 60000 / 1000));
   }
+  
+  #ifdef LED_MATRIX
+    if(UNLIKELY(!isInRaceMode())) {
+      drawMatrixDigit(0, millis() % 60000 / 1000, 1); 
+    }
+  #endif
+  
 
   // Voltage
   if (getADCVBATmode() != 0) {
@@ -225,8 +233,8 @@ void summary_page_update(void* data) {
   if( isSoundEnabled() )     display.drawString(56, 0, "S");
   else      display.drawString(56, 0, "m");
 
-  if( isShouldWaitForFirstLap() )     display.drawString(64, 0, "R");
-  else      display.drawString(64, 0, "o");
+  if( isShouldWaitForFirstLap() )     display.drawString(64, 0, "b"); //  Start | drone ... | Finish
+  else      display.drawString(64, 0, "d"); // drone | Start ... | Finish
 
   
   // Rx modules

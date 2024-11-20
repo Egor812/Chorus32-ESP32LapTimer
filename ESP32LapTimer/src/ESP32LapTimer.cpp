@@ -29,6 +29,10 @@
 #ifdef OLED
 #include "OLED.h"
 #endif
+#ifdef LED_MATRIX
+#include "Matrix.h"
+#endif
+
 #include "TimerWebServer.h"
 #include "Beeper.h"
 #include "Calibration.h"
@@ -83,6 +87,9 @@ void setup() {
 #endif
 #ifdef OLED
   oledSetup();
+#endif
+#ifdef LED_MATRIX
+  startStrip();
 #endif
 #ifdef USE_BUTTONS
   newButtonSetup();

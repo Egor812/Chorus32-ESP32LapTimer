@@ -24,6 +24,7 @@
 #include "settings_eeprom.h"
 #include "Comms.h"
 #include "Beeper.h"
+#include "Matrix.h"
 
 static volatile uint32_t LapTimes[MAX_NUM_RECEIVERS][MAX_LAPS_NUM]; // absolute time in millis
 uint32_t bestLap=0xFFFFFFFF;
@@ -95,18 +96,28 @@ uint8_t addLap(uint8_t receiver, uint32_t time) {
 
   beepLap(cur, prev, bestLap);
 
+  #ifdef LED_MATRIX
+    //При старте гонки после прохождения кольца - до старта на табло 0 (isShouldWaitForFirstLap==0)
+    //При старте по таймеру - до старта на табло 1 (isShouldWaitForFirstLap==1)
+    displayLap(receiver, lap_counter[receiver] + isShouldWaitForFirstLap() );
+  #endif
+
   return lap_counter[receiver];
 }
 
 void beepLap( uint32_t time, uint32_t prev, uint32_t best )
 {
-    if( isSoundEnabled() ) {
-   if( time==best) beep3x250();
-   else{
+  if( isSoundEnabled() ) {
+    if( time==best) beep3x250();
+    else{
       if( time<prev) beep2x250();
       else beep1x250();
     }
   }
+}
+
+void displayLap( uint8_t pilot_num, uint8_t lap){
+  drawMatrixDigit(pilot_num, lap, getNumReceivers() );
 }
 
 uint32_t getMinLapTime() {
@@ -123,5 +134,10 @@ uint8_t getCurrentLap(uint8_t receiver) {
 
 void startRaceLap() {
   resetLaptimes();
+  #ifdef LED_MATRIX
+    //При старте гонки после прохождения кольца - до старта на табло 0
+    //При старте по таймеру - до старта на табло 1
+    displayLap(0, isShouldWaitForFirstLap() );
+  #endif
   start_time = millis();
 }

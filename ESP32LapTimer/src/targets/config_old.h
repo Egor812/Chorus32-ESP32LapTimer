@@ -19,6 +19,8 @@
 
 #define LEDs 17
 
+#define STRIP_PIN 18
+
 #define USE_NORMAL_BUTTONS
 #define BUTTON1 T7 // 27
 #define BUTTON2 T4 // 13

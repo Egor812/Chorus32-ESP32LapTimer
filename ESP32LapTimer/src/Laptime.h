@@ -37,10 +37,12 @@ void startRaceLap();
  */
 uint8_t addLap(uint8_t receiver, uint32_t time);
 void beepLap(uint32_t time, uint32_t prev, uint32_t best);
+void displayLap( uint8_t pilot_num, uint8_t lap);
 /// Laps begin at 1. lap 0 is always 0
 uint8_t getCurrentLap(uint8_t receiver);
 
 /// Sends unsent laps to the output queue
 void sendNewLaps();
+
 
 #endif // __LAPTIME_H__

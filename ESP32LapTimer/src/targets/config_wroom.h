@@ -1,3 +1,4 @@
+#define USE_NORMAL_BUTTONS
 #define BEEPER 18
 
 #define LEDs 16

@@ -36,12 +36,14 @@
 /// If your setup doesn't use an OLED remove or comment the following line
 #define OLED
 
+#define LED_MATRIX
+
 // Selects the wifi mode to operate in.
 // One of these must be uncommented.
 //
 #define WIFI_MODE_ACCESSPOINT
 // For now the AP name needs to be defined regardless of mode.
-#define WIFI_AP_NAME "Chorus32 LapTimer"
+#define WIFI_AP_NAME "Chorus32 LapTimer AE"
 
 // When in client mode you also need to specify the
 // ssid and password.
